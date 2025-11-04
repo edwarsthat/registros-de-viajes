@@ -1,0 +1,29 @@
+# Dependencias de Composer
+/vendor/
+/api/vendor/
+
+# Variables de entorno (credenciales sensibles)
+.env
+
+# Archivos de Composer
+composer.lock
+api/composer.lock
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+tmp/
+temp/
+cache/

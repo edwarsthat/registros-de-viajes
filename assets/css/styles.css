@@ -1,0 +1,27 @@
+/**
+ * Estilos personalizados del proyecto
+ * 
+ * Aquí se añadirán los estilos CSS personalizados
+ * que complementen a Bootstrap según las necesidades del diseño.
+ * 
+ * Incluirá:
+ * - Estilos para el formulario de login
+ * - Personalizaciones de tablas
+ * - Estilos para mensajes de éxito/error
+ * - Ajustes responsivos adicionales
+ */
+
+/* Estilos generales */
+body {
+    /* Estilos del body se agregarán aquí */
+}
+
+/* Estilos del login */
+.login-container {
+    /* Estilos del contenedor de login */
+}
+
+/* Estilos de tablas */
+.table-custom {
+    /* Personalizaciones de tablas */
+}
