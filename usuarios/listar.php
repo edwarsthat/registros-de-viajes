@@ -13,14 +13,18 @@ if (!isset($_SESSION['usuario_id'])) {
     exit;
 }
 
+// Incluir conexión a la base de datos
+require_once '../db.php';
+
 $titulo = 'Listado de Usuarios';
 
-// Datos de ejemplo (reemplazar cuando tengas BD)
-$usuarios = [
-    ['id' => 1, 'nombre' => 'Juan Pérez', 'email' => 'juan@test.com', 'rol' => 'Administrador'],
-    ['id' => 2, 'nombre' => 'María García', 'email' => 'maria@test.com', 'rol' => 'Usuario'],
-    ['id' => 3, 'nombre' => 'Carlos López', 'email' => 'carlos@test.com', 'rol' => 'Usuario'],
-];
+// Obtener usuarios de la base de datos
+try {
+    $stmt = $pdo->query("SELECT idusuario, nombre, email, activo, fecha_creacion FROM usuario ORDER BY idusuario DESC");
+    $usuarios = $stmt->fetchAll();
+} catch (PDOException $e) {
+    die('Error al obtener usuarios: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -58,7 +62,8 @@ $usuarios = [
             </ul>
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <span class="navbar-text text-white me-3">
+                    <span class="navbar-text text-white me-3 d-flex align-items-center">
+                        <i class="bi bi-person-circle me-2"></i>
                         <?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario') ?>
                     </span>
                 </li>
@@ -95,24 +100,38 @@ $usuarios = [
                             <th>ID</th>
                             <th>Nombre</th>
                             <th>Email</th>
-                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($usuarios)): ?>
+                        <tr>
+                            <td colspan="6" class="text-center">No hay usuarios registrados</td>
+                        </tr>
+                        <?php else: ?>
                         <?php foreach ($usuarios as $usuario): ?>
                         <tr>
-                            <td><?= $usuario['id'] ?></td>
+                            <td><?= $usuario['idusuario'] ?></td>
                             <td><?= htmlspecialchars($usuario['nombre']) ?></td>
                             <td><?= htmlspecialchars($usuario['email']) ?></td>
-                            <td><?= htmlspecialchars($usuario['rol']) ?></td>
                             <td>
-                                <a href="editar.php?id=<?= $usuario['id'] ?>" class="btn btn-sm btn-warning">Editar</a>
-                                <a href="eliminar.php?id=<?= $usuario['id'] ?>" class="btn btn-sm btn-danger" 
+                                <?php if ($usuario['activo']): ?>
+                                    <span class="badge bg-success">Activo</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= date('d/m/Y H:i', strtotime($usuario['fecha_creacion'])) ?></td>
+                            <td>
+                                <a href="editar.php?id=<?= $usuario['idusuario'] ?>" class="btn btn-sm btn-warning">Editar</a>
+                                <a href="eliminar.php?id=<?= $usuario['idusuario'] ?>" class="btn btn-sm btn-danger" 
                                    onclick="return confirm('¿Está seguro de eliminar este usuario?')">Eliminar</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

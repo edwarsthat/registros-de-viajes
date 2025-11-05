@@ -8,11 +8,8 @@
 // Iniciar sesión
 session_start();
 
-// Verificar si está logueado
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../index.php');
-    exit;
-}
+// Incluir conexión a la base de datos
+require_once '../db.php';
 
 // Variables para manejar errores y mensajes
 $errores = [];
@@ -25,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
-    $rol = $_POST['rol'] ?? 'Usuario';
     
     // VALIDACIONES
     
@@ -39,6 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = 'El email es obligatorio';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errores[] = 'El email no tiene un formato válido';
+    } else {
+        // Verificar que el email no exista
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuario WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetchColumn() > 0) {
+            $errores[] = 'El email ya está registrado en el sistema';
+        }
     }
     
     // 3. Validar la contraseña
@@ -53,21 +56,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = 'Las contraseñas no coinciden';
     }
     
-    // Si no hay errores, proceder a guardar (simulado por ahora)
+    // Si no hay errores, proceder a guardar
     if (empty($errores)) {
-        // TODO: Aquí se guardará en la base de datos cuando esté lista
-        // Por ahora solo mostramos mensaje de éxito
-        
-        // En producción harías:
-        // require_once '../db.php';
-        // $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        // $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)");
-        // $stmt->execute([$nombre, $email, $password_hash, $rol]);
-        
-        $exito = true;
-        
-        // Redirigir al listado después de 2 segundos
-        header('Refresh: 2; URL=listar.php?msg=Usuario creado exitosamente');
+        try {
+            // Encriptar la contraseña usando password_hash (bcrypt)
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Insertar usuario en la base de datos
+            $stmt = $pdo->prepare("INSERT INTO usuario (nombre, email, password, activo) VALUES (?, ?, ?, 1)");
+            $stmt->execute([$nombre, $email, $password_hash]);
+            
+            $exito = true;
+            
+            // Si no está logueado, hacer login automático
+            if (!isset($_SESSION['usuario_id'])) {
+                $_SESSION['usuario_id'] = $pdo->lastInsertId();
+                $_SESSION['usuario_nombre'] = $nombre;
+                $_SESSION['usuario_email'] = $email;
+                header('Location: listar.php');
+                exit;
+            } else {
+                // Redirigir al listado después de 2 segundos
+                header('Refresh: 2; URL=listar.php?msg=Usuario creado exitosamente');
+            }
+        } catch (PDOException $e) {
+            $errores[] = 'Error al crear el usuario: ' . $e->getMessage();
+        }
     }
 }
 
@@ -98,6 +112,7 @@ $titulo = 'Crear Usuario';
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
+                <?php if (isset($_SESSION['usuario_id'])): ?>
                 <li class="nav-item">
                     <a class="nav-link active" href="listar.php">Usuarios</a>
                 </li>
@@ -107,16 +122,24 @@ $titulo = 'Crear Usuario';
                 <li class="nav-item">
                     <a class="nav-link" href="../viajes/listar.php">Viajes</a>
                 </li>
+                <?php endif; ?>
             </ul>
             <ul class="navbar-nav">
+                <?php if (isset($_SESSION['usuario_id'])): ?>
                 <li class="nav-item">
-                    <span class="navbar-text text-white me-3">
+                    <span class="navbar-text text-white me-3 d-flex align-items-center">
+                        <i class="bi bi-person-circle me-2"></i>
                         <?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario') ?>
                     </span>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../logout.php">Cerrar Sesión</a>
                 </li>
+                <?php else: ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="../index.php">Iniciar Sesión</a>
+                </li>
+                <?php endif; ?>
             </ul>
         </div>
     </div>
@@ -214,24 +237,20 @@ $titulo = 'Crear Usuario';
                             >
                         </div>
                         
-                        <!-- Campo: Rol -->
-                        <div class="mb-3">
-                            <label for="rol" class="form-label">Rol del Usuario</label>
-                            <select class="form-select" id="rol" name="rol">
-                                <option value="Usuario" <?= (($_POST['rol'] ?? '') === 'Usuario') ? 'selected' : '' ?>>Usuario</option>
-                                <option value="Administrador" <?= (($_POST['rol'] ?? '') === 'Administrador') ? 'selected' : '' ?>>Administrador</option>
-                            </select>
-                            <div class="form-text">Define los permisos del usuario en el sistema</div>
-                        </div>
-                        
                         <!-- Botones -->
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i> Guardar Usuario
                             </button>
+                            <?php if (isset($_SESSION['usuario_id'])): ?>
                             <a href="listar.php" class="btn btn-secondary">
                                 <i class="bi bi-x-circle"></i> Cancelar
                             </a>
+                            <?php else: ?>
+                            <a href="../index.php" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Volver al Login
+                            </a>
+                            <?php endif; ?>
                         </div>
                         
                     </form>

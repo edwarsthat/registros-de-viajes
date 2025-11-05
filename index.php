@@ -14,22 +14,35 @@ if (isset($_SESSION['usuario_id'])) {
     exit;
 }
 
+// Incluir conexión a la base de datos
+require_once 'db.php';
+
 $error = '';
 
-// Procesar el login (temporalmente sin BD)
+// Procesar el login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    // Validación temporal (reemplazar cuando tengas BD)
-    if ($email === 'admin@test.com' && $password === '123456') {
-        $_SESSION['usuario_id'] = 1;
-        $_SESSION['usuario_nombre'] = 'Administrador';
-        $_SESSION['usuario_email'] = $email;
-        header('Location: usuarios/listar.php');
-        exit;
-    } else {
-        $error = 'Credenciales incorrectas';
+    try {
+        // Buscar usuario por email
+        $stmt = $pdo->prepare("SELECT * FROM usuario WHERE email = ? AND activo = 1");
+        $stmt->execute([$email]);
+        $usuario = $stmt->fetch();
+        
+        // Verificar si el usuario existe y la contraseña es correcta
+        if ($usuario && password_verify($password, $usuario['password'])) {
+            // Login exitoso
+            $_SESSION['usuario_id'] = $usuario['idusuario'];
+            $_SESSION['usuario_nombre'] = $usuario['nombre'];
+            $_SESSION['usuario_email'] = $usuario['email'];
+            header('Location: usuarios/listar.php');
+            exit;
+        } else {
+            $error = 'Credenciales incorrectas o usuario inactivo';
+        }
+    } catch (PDOException $e) {
+        $error = 'Error al iniciar sesión. Intente nuevamente.';
     }
 }
 ?>
@@ -61,14 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
-                                <small class="text-muted">Usar: admin@test.com</small>
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Contraseña</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
-                                <small class="text-muted">Usar: 123456</small>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Ingresar</button>
+                            <a href="usuarios/crear.php" class="btn btn-outline-secondary w-100">Registrarse</a>
                         </form>
                     </div>
                 </div>
