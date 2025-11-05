@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API REST - Prueba de Viajes</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .response-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .loading {
+            display: none;
+        }
+        .btn-test {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 API REST - Prueba de Viajes</h1>
+            <p class="text-muted">Consulta viajes por placa de vehículo</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>📋 Consultar Viajes por Placa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="placa" class="form-label">Placa del Vehículo:</label>
+                            <input type="text" class="form-control" id="placa" placeholder="Ej: ABC123" value="ABC123">
+                        </div>
+                        <button class="btn btn-primary btn-test w-100" onclick="consultarViajesPorPlaca()">
+                            🔍 Consultar Viajes
+                        </button>
+                        <button class="btn btn-success btn-test w-100" onclick="obtenerTodosViajes()">
+                            📊 Obtener Todos los Viajes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5>➕ Crear Nuevo Viaje</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label for="idcarro" class="form-label">ID Carro:</label>
+                            <input type="number" class="form-control form-control-sm" id="idcarro" placeholder="1" value="1">
+                        </div>
+                        <div class="mb-2">
+                            <label for="idorigen" class="form-label">ID Ciudad Origen:</label>
+                            <input type="number" class="form-control form-control-sm" id="idorigen" placeholder="1" value="1">
+                        </div>
+                        <div class="mb-2">
+                            <label for="iddestino" class="form-label">ID Ciudad Destino:</label>
+                            <input type="number" class="form-control form-control-sm" id="iddestino" placeholder="2" value="2">
+                        </div>
+                        <div class="mb-2">
+                            <label for="tiempo" class="form-label">Tiempo (horas):</label>
+                            <input type="number" class="form-control form-control-sm" id="tiempo" placeholder="5.5" value="5.5" step="0.1">
+                        </div>
+                        <div class="mb-2">
+                            <label for="fecha" class="form-label">Fecha:</label>
+                            <input type="date" class="form-control form-control-sm" id="fecha" value="2024-11-04">
+                        </div>
+                        <button class="btn btn-info btn-test w-100" onclick="crearViaje()">
+                            ✅ Crear Viaje
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="response-box">
+            <div class="loading">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                Cargando...
+            </div>
+            <pre id="response" style="margin: 0;"></pre>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <h5>📍 URLs de la API:</h5>
+            <code>GET http://localhost:8001/api/viajes/por-placa/ABC123</code> <br>
+            <code>GET http://localhost:8001/api/viajes</code> <br>
+            <code>POST http://localhost:8001/api/viajes</code>
+        </div>
+    </div>
+
+    <script>
+        function mostrarCargando() {
+            document.querySelector('.loading').style.display = 'block';
+            document.getElementById('response').textContent = '';
+        }
+
+        function ocultarCargando() {
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        async function consultarViajesPorPlaca() {
+            const placa = document.getElementById('placa').value.trim();
+            if (!placa) {
+                alert('Por favor ingresa una placa');
+                return;
+            }
+
+            mostrarCargando();
+            try {
+                const response = await fetch(`http://localhost:8001/api/viajes/por-placa/${placa}`);
+                const data = await response.json();
+                ocultarCargando();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                ocultarCargando();
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function obtenerTodosViajes() {
+            mostrarCargando();
+            try {
+                const response = await fetch('http://localhost:8001/api/viajes');
+                const data = await response.json();
+                ocultarCargando();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                ocultarCargando();
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function crearViaje() {
+            const datos = {
+                idcarro: parseInt(document.getElementById('idcarro').value),
+                idciudad_origen: parseInt(document.getElementById('idorigen').value),
+                idciudad_destino: parseInt(document.getElementById('iddestino').value),
+                tiempo_horas: parseFloat(document.getElementById('tiempo').value),
+                fecha: document.getElementById('fecha').value
+            };
+
+            if (datos.idciudad_origen === datos.idciudad_destino) {
+                alert('La ciudad de origen debe ser diferente a la de destino');
+                return;
+            }
+
+            mostrarCargando();
+            try {
+                const response = await fetch('http://localhost:8001/api/viajes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datos)
+                });
+                const data = await response.json();
+                ocultarCargando();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                ocultarCargando();
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Cargar datos al iniciar
+        window.addEventListener('load', () => {
+            document.getElementById('response').textContent = 'Sistema listo. Elige una opción para comenzar.';
+        });
+    </script>
+</body>
+</html>
